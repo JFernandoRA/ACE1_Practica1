@@ -73,8 +73,8 @@ menu_loop:
    beq div                //division
    cmp w0, #5
    beq pot                //potencia
-   cmp w0, #6
-   beq fact*/             //potencia
+   cmp w0, #6 */
+   beq fact               //factorial
    cmp w0, #7
    bgt error_ingreso
    beq salida
@@ -330,7 +330,69 @@ mult:
 
 //AQUI VAYAN AGREGANDO LAS SUBRUTINAS DE LAS OPERACIONES QUE FALTAN
 
+fact:
+   //solicitar el numero
+   mov x8, #64
+   mov x0, #1
+   ldr x1, =msg_fact
+   mov x2, #tamanio_fact
+   svc #0
 
+   mov x8, #63
+   mov x0, #0
+   ldr x1, =buffer_entrada
+   mov x2, #tamanio_buffer
+   svc #0
+
+   ldr x1, =buffer_entrada
+   bl atoi
+   cmp w0, #-1
+   beq error_ingreso
+   mov w19, w0    //w19 = n
+
+   //factorial iterativo: w21 = acumulador (0! = 1! = 1)
+   mov w21, #1
+   cmp w19, #0
+   beq fact_imprimir    //si n = 0 el resultado ya es 1
+   cmp w19, #1
+   beq fact_imprimir    // si n = 1 el resultado ya es 1
+
+   mov w22, #2          //w22 = contador, es decir que arranca en 2
+
+fact_loop:
+   cmp w22, w19
+   bgt fact_imprimir    //si contador > n, se termina
+   mul w21, w21, w22
+   add w22, w22, #1
+   b fact_loop
+
+fact_imprimir:
+   //imprimir encabezado del resultado
+   mov x8, #64
+   mov x0, #1
+   ldr x1, =msg_resultado
+   mov x2, #tamanio_resultado
+   svc #0
+
+   //convertir entero a ascii
+   ldr x1, =buffer_salida
+   add x1, x1, #15
+   mov w0, w21
+   bl itoa
+
+   //imprimir resultado
+   mov x8, #64
+   mov x0, #1
+   svc #0
+
+   //imprimir el salto de linea
+   mov x8, #64
+   mov x0, #1
+   ldr x1, =msg_salto
+   mov x2, #tamanio_salto
+   svc #0
+
+   b menu_loop
 
 //DEJEN EL ITOA SIEMPRE DE ULTIMO
 
