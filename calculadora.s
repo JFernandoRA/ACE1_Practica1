@@ -75,8 +75,8 @@ menu_loop:
    cmp w0, #4
    beq division           //division
 
-   /* cmp w0, #5
-   beq pot */             //potencia
+   cmp w0, #5
+   beq pot              //potencia
 
    cmp w0, #6
    beq fact               //factorial
@@ -416,6 +416,101 @@ division_cero:
     mov x2, #tamanio_div_cero
     svc #0
     b menu_loop
+
+pot:
+   //solicitar base
+   mov x8, #64
+   mov x0, #1
+   ldr x1, =msg_base
+   mov x2, #tamanio_base
+   svc #0
+
+
+   mov x8, #63
+   mov x0, #0
+   ldr x1, =buffer_entrada
+   mov x2, #tamanio_buffer
+   svc #0
+
+
+   ldr x1, =buffer_entrada
+   bl atoi
+   cmp w0, #-1
+   beq error_ingreso
+   mov w19, w0          //w19 = base
+
+
+   //solicitar exponente
+   mov x8, #64
+   mov x0, #1
+   ldr x1, =msg_exp
+   mov x2, #tamanio_exp
+   svc #0
+
+
+   mov x8, #63
+   mov x0, #0
+   ldr x1, =buffer_entrada
+   mov x2, #tamanio_buffer
+   svc #0
+
+
+   ldr x1, =buffer_entrada
+   bl atoi
+   cmp w0, #-1
+   beq error_ingreso        //atoi ahora rechaza el signo "-", con esto cubre exponentes negativos
+   mov w20, w0          //w20 = exponente
+
+
+   //potencia por multiplicacion repetida: w21 = acumulador (base^0 = 1)
+   mov w21, #1
+   cmp w20, #0
+   beq pot_imprimir     //si exponente = 0, el resultado ya es 1
+
+
+   mov w22, #0          //w22 = contador
+
+
+pot_loop:
+   cmp w22, w20
+   bge pot_imprimir     //si contador >= exponente, se termina
+   mul w21, w21, w19
+   add w22, w22, #1
+   b pot_loop
+
+
+pot_imprimir:
+   //imprimir encabezado del resultado
+   mov x8, #64
+   mov x0, #1
+   ldr x1, =msg_resultado
+   mov x2, #tamanio_resultado
+   svc #0
+
+
+   //convertir entero a ascii
+   ldr x1, =buffer_salida
+   add x1, x1, #15
+   mov w0, w21
+   bl itoa
+
+
+   //imprimir resultado
+   mov x8, #64
+   mov x0, #1
+   svc #0
+
+
+   //imprimir salto de linea
+   mov x8, #64
+   mov x0, #1
+   ldr x1, =msg_salto
+   mov x2, #tamanio_salto
+   svc #0
+
+
+   b menu_loop
+
 
 
 
