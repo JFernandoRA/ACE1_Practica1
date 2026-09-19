@@ -12,6 +12,9 @@ menu:   .asciz "====Calculadora ARM64====\n"
 msg_error: .asciz "Opcion Invalida, intente de nuevo\n"
       .equ tamanio_msg_error, .-msg_error
 
+msg_div_cero: .asciz "Error: no se puede dividir entre cero\n"
+      .equ tamanio_div_cero, .-msg_div_cero
+
 msg_num1: .asciz "Ingrese el primer numero:"
       .equ tamanio_numero1, .-msg_num1
 
@@ -69,12 +72,15 @@ menu_loop:
    beq resta
    cmp w0, #3
    beq mult
-  /* cmp w0, #4
-   beq div                //division
-   cmp w0, #5
-   beq pot                //potencia
-   cmp w0, #6 */
+   cmp w0, #4
+   beq division           //division
+
+   /* cmp w0, #5
+   beq pot */             //potencia
+
+   cmp w0, #6
    beq fact               //factorial
+
    cmp w0, #7
    bgt error_ingreso
    beq salida
@@ -329,6 +335,89 @@ mult:
    b menu_loop
 
 //AQUI VAYAN AGREGANDO LAS SUBRUTINAS DE LAS OPERACIONES QUE FALTAN
+
+
+division:
+    // solicitar primer numero (dividendo)
+    mov x8, #64
+    mov x0, #1
+    ldr x1, =msg_num1
+    mov x2, #tamanio_numero1
+    svc #0
+
+    mov x8, #63
+    mov x0, #0
+    ldr x1, =buffer_entrada
+    mov x2, #tamanio_buffer
+    svc #0
+
+    ldr x1, =buffer_entrada
+    bl atoi
+    cmp w0, #-1
+    beq error_ingreso
+    mov w19, w0            // dividendo
+
+    // solicitar segundo numero (divisor)
+    mov x8, #64
+    mov x0, #1
+    ldr x1, =msg_num2
+    mov x2, #tamanio_numero2
+    svc #0
+
+    mov x8, #63
+    mov x0, #0
+    ldr x1, =buffer_entrada
+    mov x2, #tamanio_buffer
+    svc #0
+
+    ldr x1, =buffer_entrada
+    bl atoi
+    cmp w0, #-1
+    beq error_ingreso
+    mov w20, w0            // divisor
+
+    // no permitir division entre cero
+    cmp w20, #0
+    beq division_cero
+
+    // division entera con signo
+    sdiv w21, w19, w20
+
+    // imprimir encabezado
+    mov x8, #64
+    mov x0, #1
+    ldr x1, =msg_resultado
+    mov x2, #tamanio_resultado
+    svc #0
+
+    // convertir resultado a ASCII
+    ldr x1, =buffer_salida
+    add x1, x1, #15
+    mov w0, w21
+    bl itoa
+
+    // itoa deja x1 apuntando al inicio y x2 con la longitud
+    mov x8, #64
+    mov x0, #1
+    svc #0
+
+    mov x8, #64
+    mov x0, #1
+    ldr x1, =msg_salto
+    mov x2, #tamanio_salto
+    svc #0
+
+    b menu_loop
+
+division_cero:
+    mov x8, #64
+    mov x0, #1
+    ldr x1, =msg_div_cero
+    mov x2, #tamanio_div_cero
+    svc #0
+    b menu_loop
+
+
 
 fact:
    //solicitar el numero
